@@ -10,7 +10,6 @@ public class DAS{
     static public int MAX_DATAGRAM_SIZE = MIN_MTU - MAX_IP_HEADER_SIZE - UDP_HEADER_SIZE;
 
     private DatagramSocket socket;
-    private int applicationValue;
     private List<Integer> values = new ArrayList<Integer>();
 
     public static void main(String[] args) {
@@ -49,11 +48,7 @@ public class DAS{
     }
 
     public void startMasterMode(int number) throws IOException {
-
-    }
-
-    public void startSlaveMode(int number) throws IOException {
-        applicationValue = number;
+        //applicationValue = number;
         values.add(number);
         System.out.println("Value: " + number);
         byte[] buffer = new byte[MAX_DATAGRAM_SIZE];
@@ -65,10 +60,30 @@ public class DAS{
         }).start();
     }
 
+    public void startSlaveMode(int number) throws IOException {
+        new Thread(() -> {
+            try (DatagramSocket socket = new DatagramSocket()) {
+                InetAddress localhost = InetAddress.getByName("localhost");
+                byte[] data = String.valueOf(number).getBytes();
+                DatagramPacket datagram = new DatagramPacket(data, data.length, localhost, number);
+                socket.send(datagram);
+                System.out.println("Sent: " + number);
+
+                byte[] bufer = new byte[MAX_DATAGRAM_SIZE];
+                DatagramPacket response = new DatagramPacket(bufer, bufer.length);
+                socket.receive(response);
+                String message = new String(response.getData(), 0, response.getLength()).trim();
+                System.out.println("Response: " + message);
+            }catch (IOException e){
+                System.err.println(e.getMessage());
+            }
+        });
+    }
+
     public void handleN(int n, InetAddress adress, int port){
         switch (n){
             case -1:{
-                System.out.println(n);
+                System.out.println(n + " Closing socket");
                 broadcast(n, adress, port);
                 socket.close();
                 System.exit(0);
@@ -76,7 +91,7 @@ public class DAS{
             break;
             case 0:{
                 int avg = calculateAverage();
-                System.out.println(avg);
+                System.out.println("Average = " + avg);
                 broadcast(avg, adress, port);
             }
             break;
