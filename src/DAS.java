@@ -98,7 +98,7 @@ public class DAS {
         switch (n) {
             case -1: {
                 System.out.println(n + " Closing socket");
-                broadcast(n, address, port);
+                broadcast(n, port);
                 socket.close();
                 System.out.println("Socket closed.");
                 System.exit(0);
@@ -107,7 +107,7 @@ public class DAS {
             case 0: {
                 int avg = calculateAverage();
                 System.out.println("Average = " + avg);
-                broadcast(avg, address, port);
+                broadcast(avg, port);
             }
             break;
             default: {
@@ -131,10 +131,11 @@ public class DAS {
         return avg;
     }
 
-    public void broadcast(int n, InetAddress address, int port) {
+    public void broadcast(int n, int port) {
         try {
             byte[] nBuff = String.valueOf(n).getBytes();
-            DatagramPacket datagram = new DatagramPacket(nBuff, nBuff.length, address, port);
+            InetAddress broadcastAddress = InetAddress.getByName("255.255.255.255");
+            DatagramPacket datagram = new DatagramPacket(nBuff, nBuff.length, broadcastAddress, port);
             socket.send(datagram);
         } catch (IOException e) {
             System.err.println(e.getMessage());
